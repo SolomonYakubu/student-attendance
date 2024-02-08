@@ -1,0 +1,181 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@font-face {
+  font-family: poppins;
+  src: url('/src/fonts/Poppins-Regular.ttf');
+}
+@font-face {
+  font-family: gothic;
+  src: url('/src/fonts/CenturyGothic.ttf');
+}
+*{
+  font-family: gothic;
+  box-sizing: border-box;
+ 
+}
+table,
+th,
+td {
+  border: 1px solid white;
+}
+.sidebar{
+  width:100%;
+  background-color: #010440;
+  position: relative;
+  height: 60px;
+  outline: none;
+  border:none;
+  color:rgb(209, 209, 209);
+  
+  font-weight: lighter;
+ 
+}
+.sidebar-scale{
+  width: 100%;
+    background-color: #010440;
+    position: relative;
+    height: 60px;
+    outline: none;
+    border: none;
+    color: rgb(209, 209, 209);
+    
+    font-weight: lighter;
+  transform: scale(1.15);
+ 
+  
+}
+.sidebar-scale::before{
+  content: '';
+    position: absolute;
+    right: -35px;
+    border: none;
+    bottom: 0;
+    width: 0;
+    height: 0;
+    
+  border-left: 30px solid #F28705;
+  border-top: 30px solid transparent;
+    border-bottom: 30px solid transparent;
+}
+.sidebar::before{
+  content:'';
+  position: absolute;
+right: -35px;
+border: none;
+bottom:0;
+width: 0;
+height: 0;
+  border-left: 30px solid #010440;
+  border-top: 30px solid transparent;
+  border-bottom: 30px solid transparent;
+}
+.sidebar:hover{
+  opacity: 0.5;
+}
+.btn{
+  padding:10px;
+
+
+  border:none;
+  font-weight: lighter;
+  
+  border-radius: 5px;
+
+  text-align: center;
+  outline: none;
+}
+.btn-primary {
+  background-color: #F28705;
+  color:#333842;
+  font-weight: bold;
+}
+.btn-primary:hover{
+  background-color: #beeefc;
+}
+.btn-secondary{
+  color:#F28705;
+    background: none;
+}
+.btn-secondary:hover{
+  color:#fff
+}
+
+.btn:hover{
+  transform: scale(1.01);
+}
+.btn:active{
+  animation: ripple 200ms alternate;
+}
+@keyframes ripple {
+  to{
+  transform: scale(1.05);
+    opacity: 0;
+  }
+}
+.input{
+padding: 5px;
+  
+  font-size: 18px;
+ 
+  border-color: #F28705;
+  border-width: 2px;
+ 
+  outline: none;
+}
+.custom-file-input::-webkit-file-upload-button {
+ 
+  display: none;
+}
+.custom-file-input {
+  border-radius: 5px;
+
+ outline: none;
+}
+
+.custom-file-input::before {
+  content: 'Upload Photo';
+  display: inline-block;
+ 
+width: 100%;
+text-align: center;
+  
+  height: 100%;
+  padding: 10px;
+  margin: 0;
+  outline: none;
+  white-space: nowrap;
+border: none;
+  cursor: pointer;
+
+
+border-radius: 5px;
+  
+  
+   
+}
+
+
+.custom-file-input:hover::before{
+    background-color: #beeefc;
+  }
+
+  .container{
+    width: 80%;
+    /* height: 95vh; */
+    min-height:  100vh;
+    overflow: hidden;
+    /* padding:10px; */
+    display:flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .sub-container{
+  
+    /* padding: 15px 0 15px 0; */
+    border-radius: 10px;
+    background-color: #000108;
+      background: linear-gradient(90deg, #161a38 0%, #000108 100%);
+  }
+ 

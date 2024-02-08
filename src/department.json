@@ -1,0 +1,19 @@
+{
+  "courses": [
+    { "id": 1, "name": "Civil Engineering" },
+    { "id": 2, "name": "Electrical Engineering" },
+    { "id": 3, "name": "Mechanical Engineering" },
+    { "id": 4, "name": "Chemical Engineering" },
+    { "id": 5, "name": "Computer Engineering" },
+    { "id": 6, "name": "Agricultural Engineering" },
+    { "id": 7, "name": "Materials and Metallurgical Engineering" },
+    { "id": 8, "name": "Physics" },
+    { "id": 9, "name": "Chemistry" },
+    { "id": 10, "name": "Mathematics" },
+    { "id": 11, "name": "Biology" },
+    { "id": 12, "name": "Geology" },
+    { "id": 13, "name": "Statistics" },
+    { "id": 14, "name": "Biochemistry" },
+    { "id": 15, "name": "Mechatronics" }
+  ]
+}
