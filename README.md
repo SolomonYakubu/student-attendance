@@ -62,15 +62,15 @@ npm start
 
 ## Screenshots
 
-![Screenshot 1: Main Dashboard](screenshot1.png)
+![Screenshot 1: Main Dashboard](./screenshot1.png)
 
-![Screenshot 2: Fingerprint Scanning Interface](screenshot5.png)
+![Screenshot 2: Fingerprint Scanning Interface](./screenshot5.png)
 
-![Screenshot 3: Attendance Report](screenshot3.png)
+![Screenshot 3: Attendance Report](./screenshot3.png)
 
-![Screenshot 4: Profile Picture Upload](screenshot2.png)
+![Screenshot 4: Profile Picture Upload](./screenshot2.png)
 
-![Screenshot 5: Attendance Statistics](screenshot4.png)
+![Screenshot 5: Attendance Statistics](./screenshot4.png)
 
 ## Configuration
 
@@ -115,4 +115,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-[Add your chosen license here]
+[MIT LICENSE]
