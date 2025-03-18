@@ -1,50 +1,46 @@
 const getProfile = async (_id) => {
-  const dbase = require("../utils/connectDB");
-
-  const lodash = require("lodash");
-  const db = await dbase();
-
-  // console.log(db);
-  db.chain = lodash.chain(db.data);
-  const user = db.chain.get("users").find({ _id }).value();
+  const connectDB = require("../utils/connectDB");
+  const db = await connectDB();
+  const user = await db.getUser(_id);
   return user;
 };
 
 const getMonthAttendance = async (_id, course) => {
-  const dbase = require("../utils/connectAttendanceDB");
-  const lodash = require("lodash");
-  const db = await dbase();
-  db.chain = lodash.chain(db.data);
+  const connectAttendanceDB = require("../utils/connectAttendanceDB");
+  const db = await connectAttendanceDB();
 
   const month = new Date().getMonth();
   const year = new Date().getFullYear();
 
-  const attend = db.chain.get("attendance").find({ _id }).value()?.attendance;
+  const attendanceRecord = await db.getStudentAttendance(_id);
+  if (!attendanceRecord) return 0;
 
-  return attend?.filter(
-    (item) =>
-      item.month === month && item.year === year && item.course === course
-  )?.length;
+  const attend = attendanceRecord.attendance;
+  return (
+    attend.filter(
+      (item) =>
+        item.month === month && item.year === year && item.course === course
+    ).length || 0
+  );
 };
+
 const getTotalAttendance = async (_id, course) => {
-  const dbase = require("../utils/connectAttendanceDB");
-  const lodash = require("lodash");
-  const db = await dbase();
-  db.chain = lodash.chain(db.data);
+  const connectAttendanceDB = require("../utils/connectAttendanceDB");
+  const db = await connectAttendanceDB();
 
-  const attend = db.chain
-    .get("attendance")
-    .find({ _id })
-    .value()
-    ?.attendance.filter((item) => item.course === course);
+  const attendanceRecord = await db.getStudentAttendance(_id);
+  if (!attendanceRecord) return 0;
 
-  return attend?.length;
+  const attend = attendanceRecord.attendance.filter(
+    (item) => item.course === course
+  );
+
+  return attend.length || 0;
 };
+
 const getEachDayStats = async (_id, course) => {
-  const dbase = require("../utils/connectAttendanceDB");
-  const lodash = require("lodash");
-  const db = await dbase();
-  db.chain = lodash.chain(db.data);
+  const connectAttendanceDB = require("../utils/connectAttendanceDB");
+  const db = await connectAttendanceDB();
 
   const month = new Date().getMonth();
   const year = new Date().getFullYear();
@@ -57,18 +53,24 @@ const getEachDayStats = async (_id, course) => {
     "Friday",
     "Saturday",
   ];
-  const attend = db.chain.get("attendance").find({ _id }).value()?.attendance;
 
-  //   console.log(totalAttend);
+  const attendanceRecord = await db.getStudentAttendance(_id);
+  if (!attendanceRecord) return weekDays.map((day) => ({ day, attendance: 0 }));
+
+  const attend = attendanceRecord.attendance;
+
   let eachDay = [];
   for (let i = 0; i < 7; i++) {
-    let currentDayNumberLength = attend?.filter(
-      (item) =>
-        item.month === month &&
-        new Date(`${item.year}/${item.month + 1}/${item.day}`).getDay() === i &&
-        item.year === year &&
-        item.course === course
-    )?.length;
+    let currentDayNumberLength =
+      attend.filter(
+        (item) =>
+          item.month === month &&
+          new Date(`${item.year}/${item.month + 1}/${item.day}`).getDay() ===
+            i &&
+          item.year === year &&
+          item.course === course
+      ).length || 0;
+
     let today = { day: weekDays[i], attendance: currentDayNumberLength };
     eachDay.push(today);
   }
@@ -76,26 +78,37 @@ const getEachDayStats = async (_id, course) => {
 };
 
 const getTimeStats = async (_id, course) => {
-  const dbase = require("../utils/connectAttendanceDB");
-  const lodash = require("lodash");
-  const db = await dbase();
-  db.chain = lodash.chain(db.data);
+  const connectAttendanceDB = require("../utils/connectAttendanceDB");
+  const { _24to12 } = require("../utils/formatTime");
+  const db = await connectAttendanceDB();
 
   const month = new Date().getMonth();
   const year = new Date().getFullYear();
-  const { _24to12 } = require("../utils/formatTime");
-  const attend = db.chain.get("attendance").find({ _id }).value()?.attendance;
 
-  //   console.log(totalAttend);
+  const attendanceRecord = await db.getStudentAttendance(_id);
+  if (!attendanceRecord)
+    return Array(24)
+      .fill()
+      .map((_, i) => ({
+        name: `${_24to12(`${i}:0`)} - ${_24to12(
+          `${(i < 23 && `${i + 1}:0`) || "0:0"}`
+        )}`,
+        attendance: 0,
+      }));
+
+  const attend = attendanceRecord.attendance;
+
   let time = [];
   for (let i = 0; i < 24; i++) {
-    let currentTimeNumberLength = attend?.filter(
-      (item) =>
-        item.month === month &&
-        item.time.split(":")[0] == i &&
-        item.year === year &&
-        item.course === course
-    )?.length;
+    let currentTimeNumberLength =
+      attend.filter(
+        (item) =>
+          item.month === month &&
+          item.time.split(":")[0] == i &&
+          item.year === year &&
+          item.course === course
+      ).length || 0;
+
     let hours = {
       name: `${_24to12(`${i}:0`)} - ${_24to12(
         `${(i < 23 && `${i + 1}:0`) || "0:0"}`
@@ -106,36 +119,42 @@ const getTimeStats = async (_id, course) => {
   }
   return time;
 };
+
 const getTotalCount = async (course) => {
   const courseAttendanceDbase = require("../utils/connectCourseAttendanceDB");
-  const lodash = require("lodash");
   const courseDb = await courseAttendanceDbase();
-  courseDb.chain = lodash.chain(courseDb.data);
-  let courseAttendance = courseDb.chain
-    .get("courses")
-    .find({ course })
-    .value().count;
-  console.log(courseAttendance);
-  return courseAttendance;
+
+  const courseAttendance = await courseDb.getCourseAttendanceByName(course);
+  console.log(courseAttendance.attendance.length);
+  if (!courseAttendance) return 0;
+
+  return courseAttendance.attendance.length || 0;
 };
+
 const report = async (event, arg) => {
-  const dbase = require("../utils/connectDB");
-  const lodash = require("lodash");
-  const db = await dbase();
+  const connectDB = require("../utils/connectDB");
+  const db = await connectDB();
   const { matric, course } = arg;
   console.log(matric, course);
-  db.chain = lodash.chain(db.data);
-  const _id = db.chain.get("users").find({ matric: matric }).value()?._id;
+
+  // Find user by matric
+  const users = await db.read();
+  const user = users.users.find((u) => u.matric === matric);
+  if (!user) {
+    return event.sender.send("report-res", { error: "User not found" });
+  }
+
+  const _id = user.id;
   const profile = await getProfile(_id);
   const monthAttendance = await getMonthAttendance(_id, course);
   const totalAttendance = await getTotalAttendance(_id, course);
   const weekStats = await getEachDayStats(_id, course);
   const timeStats = await getTimeStats(_id, course);
   const courseCount = await getTotalCount(course);
+
   console.log(matric);
   return event.sender.send("report-res", {
     profile,
-
     monthAttendance,
     totalAttendance,
     weekStats,

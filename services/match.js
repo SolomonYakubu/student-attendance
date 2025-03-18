@@ -1,135 +1,137 @@
 /* eslint-disable no-unexpected-multiline */
 /* eslint-disable no-useless-escape */
 /* eslint-disable no-unused-vars */
+const { exec } = require("child_process");
+const path = require("path");
+const fs = require("fs").promises;
+const dbase = require("../utils/connectDB");
+const attendance = require("./attendance");
+const signedOut = require("./signOut");
+
 const matchUser = async (event, arg) => {
-  const exec = require("child_process").exec;
-  const dbase = require("../utils/connectDB");
-  const lodash = require("lodash");
-  const attendance = require("./attendance");
-  const signedOut = require("./signOut");
-  let response;
+  try {
+    const scanResult = await new Promise((resolve, reject) => {
+      exec(`cd .exec & fcmb.exe ./ match`, (error, stdout, stderr) => {
+        const response = stdout.split("\n")[2]?.slice(0, 28).trim();
 
-  const path = require("path");
-  const fs = require("fs");
+        if (
+          error ||
+          !response ||
+          !(response === "" || response === "Fingerprint image is written")
+        ) {
+          if (response === undefined) {
+            resolve({ error: true, status: "connect scanner" });
+          } else {
+            resolve({ error: true, status: "try again" });
+          }
+          return;
+        }
 
-  await exec(
-    `cd .exec & fcmb.exe ./ match`,
-    async function (error, stdout, stderr) {
-      response = stdout.split("\n")[2]?.slice(0, 28).trim();
-
-      if (
-        !error &&
-        (response == "" || response == "Fingerprint image is written")
-      ) {
-        const currentPath = path.resolve(".exec", `match.xyt`);
+        const currentPath = path.resolve(".exec", "match.xyt");
         const minPath = path.resolve(".db/minut", "m.lis");
-        exec(
-          `cd .exec/exec && bozorth3 -p \"${currentPath}\" -G \"${minPath}\"`,
-          (err, stdo, stde) => {
-            let arr = stdo.split("\r\n");
-            let numArr = arr.map((str) => Number(str));
-            let max = Math.max(...numArr);
-            const index = numArr.indexOf(max);
-            let minut;
-            fs.readFile(
-              path.resolve(".db/minut", "m.lis"),
-              "utf8",
-              async (err, data) => {
-                minut = data
-                  .split("\n")
-                  [index].match("([a-zA-Z-0-9]+)(.xyt)")[1];
-                // console.log(minut);
-                const userId = minut.substring(0, minut.length - 1);
-                const db = await dbase();
-                db.chain = lodash.chain(db.data);
-                const user = db.chain
-                  .get("users")
-                  .find({ _id: userId })
-                  .value();
-                console.log(user);
-                if (max >= 23) {
-                  if (arg.status === "signIn") {
-                    const attendanceResult = await attendance.populate(
-                      user._id,
-                      arg.course
-                    );
-                    console.log(attendanceResult);
-                    switch (attendanceResult.status) {
-                      case "duplicate":
-                        return event.sender.send("match-res", {
-                          error: true,
-                          status: "duplicate",
-                        });
-                      case "marked":
-                        return event.sender.send("match-res", {
-                          status: "marked",
 
-                          user: { ...user, time: attendanceResult.time },
-                        });
-                      case "No Course":
-                        return event.sender.send("match-res", {
-                          status: "No Course",
-                          error: true,
-                        });
-                      default:
-                        return event.sender.send("match-res", {
-                          error: true,
-                          status: "try again",
-                        });
-                    }
+        exec(
+          `cd .exec/exec && bozorth3 -p "${currentPath}" -G "${minPath}"`,
+          async (err, stdo) => {
+            try {
+              const numArr = stdo.split("\r\n").map(Number);
+              const max = Math.max(...numArr);
+              const index = numArr.indexOf(max);
+
+              // Read and parse minutiae file
+              const data = await fs.readFile(
+                path.resolve(".db/minut", "m.lis"),
+                "utf8"
+              );
+              const minutMatch = data
+                .split("\n")
+                [index].match("([a-zA-Z-0-9]+)(.xyt)");
+              const minut = minutMatch ? minutMatch[1] : null;
+
+              if (!minut) {
+                resolve({ error: true, status: "not found" });
+                return;
+              }
+
+              const userId = minut.substring(0, minut.length - 1);
+              const db = await dbase();
+              const user = await db.getUser(userId);
+
+              if (user) {
+                user._id = user.id; // Maintain compatibility with previous implementation
+              }
+
+              console.log(user);
+              console.log(numArr, index, max);
+
+              if (max >= 23 && user) {
+                if (arg.status === "signIn") {
+                  const attendanceResult = await attendance.populate(
+                    user._id,
+                    arg.course
+                  );
+                  console.log(attendanceResult);
+
+                  switch (attendanceResult.status) {
+                    case "duplicate":
+                      resolve({ error: true, status: "duplicate" });
+                      break;
+                    case "marked":
+                      resolve({
+                        status: "marked",
+                        user: { ...user, time: attendanceResult.time },
+                      });
+                      break;
+                    case "No Course":
+                      resolve({ status: "No Course", error: true });
+                      break;
+                    default:
+                      resolve({ error: true, status: "try again" });
                   }
-                  if (arg.status === "signOut") {
-                    const signOutResult = await signedOut.signOut(user._id);
-                    switch (signOutResult.status) {
-                      case "success":
-                        return event.sender.send("match-res", {
-                          user: { ...user, time: signOutResult.time },
-                          status: "signed out",
-                        });
-                      case "not yet":
-                        return event.sender.send("match-res", {
-                          error: true,
-                          status: "not yet",
-                        });
-                      case "duplicate":
-                        return event.sender.send("match-res", {
-                          error: true,
-                          status: "duplicate",
-                        });
-                      default:
-                        return event.sender.send("match-res", {
-                          error: true,
-                          status: "not signed",
-                        });
-                    }
-                  }
+                  return;
                 }
 
-                return event.sender.send("match-res", {
-                  error: true,
-                  status: "not found",
-                });
+                if (arg.status === "signOut") {
+                  const signOutResult = await signedOut.signOut(user._id);
+
+                  switch (signOutResult.status) {
+                    case "success":
+                      resolve({
+                        user: { ...user, time: signOutResult.time },
+                        status: "signed out",
+                      });
+                      break;
+                    case "not yet":
+                      resolve({ error: true, status: "not yet" });
+                      break;
+                    case "duplicate":
+                      resolve({ error: true, status: "duplicate" });
+                      break;
+                    default:
+                      resolve({ error: true, status: "not signed" });
+                  }
+                  return;
+                }
               }
-            );
-            console.log(numArr, index, max);
+
+              resolve({ error: true, status: "not found" });
+            } catch (innerError) {
+              console.error("Processing error:", innerError);
+              resolve({ error: true, status: "processing error" });
+            }
           }
         );
-      } else if (response === undefined) {
-        console.log("connect scanner");
-        const res = {
-          error: true,
-          status: "connect scanner",
-        };
-        return event.sender.send("match-res", res);
-      } else {
-        const res = {
-          error: true,
-          status: "try again",
-        };
-        return event.sender.send("match-res", res);
-      }
-    }
-  );
+      });
+    });
+
+    return event.sender.send("match-res", scanResult);
+  } catch (error) {
+    console.error("Matching error:", error);
+    return event.sender.send("match-res", {
+      error: true,
+      status: "system error",
+    });
+  }
 };
 
 module.exports = {

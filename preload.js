@@ -69,4 +69,36 @@ contextBridge.exposeInMainWorld("electron", {
     send("downloaddata-res");
   },
   path: path,
+  courseReport: (course) => {
+    console.log(`Sending course report request for: ${course}`);
+    ipcRenderer.send("course-report", course);
+  },
+  lecturerReports: (courses) => {
+    ipcRenderer.send("lecturer-reports", courses);
+  },
+  exportReportToExcel: (courseCode, reportData) => {
+    ipcRenderer.send("export-report-excel", courseCode, reportData);
+  },
+});
+
+// Add IPC listeners for sync and download status
+ipcRenderer.on("sync-status", (event, status) => {
+  window.postMessage({ channel: "sync-status", data: status }, "*");
+});
+
+ipcRenderer.on("download-status", (event, status) => {
+  window.postMessage({ channel: "download-status", data: status }, "*");
+});
+
+ipcRenderer.on("course-report-res", (event, data) => {
+  console.log("Received course report response:", data);
+  window.postMessage(data, "*");
+});
+
+ipcRenderer.on("lecturer-reports-res", (event, data) => {
+  window.postMessage(data, "*");
+});
+
+ipcRenderer.on("export-excel-complete", (event, data) => {
+  window.postMessage(data, "*");
 });

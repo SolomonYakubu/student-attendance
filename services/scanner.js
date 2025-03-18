@@ -2,26 +2,21 @@ const getData = async (event, isDev, arg) => {
   const { _id, count } = arg;
   const exec = require("child_process").exec;
   const fs = require("fs");
+  const path = require("path");
 
-  const dbase = require("../utils/connectDB");
-  const lodash = require("lodash");
+  // Use the new database connection
+  const getDb = require("../utils/connectDB");
   let response;
+
   const file = "./.db/minut";
   if (!fs.existsSync(file)) {
     fs.mkdirSync(file);
   }
-  const path = require("path");
 
   await exec(
     `cd .exec & fcmb.exe ./ ${_id + count.toString()}`,
     async function (error, stdout, stderr) {
-      // if (stdout.split("\n")[2]) {
-      //   response = stdout.split("\n")[2]?.slice(0, 28).trim();
-      // } else {
-      //   response = stdout.split("\n")[1]?.slice(0, 28).trim();
-      // }
       response = stdout.split("\n")[2]?.slice(0, 28).trim();
-      // console.log(stdout);
       console.log(response);
 
       if (
@@ -36,26 +31,15 @@ const getData = async (event, isDev, arg) => {
           ".db/minut",
           `${_id + count.toString()}.xyt`
         );
-        // const currentImagePath = path.join("./", ".exec/bmp", `${rand}.bmp`);
-        // const newImagePath = `./src/img/${rand}.bmp`;
-        // fs.renameSync(currentImagePath, newImagePath, (err) => {
-        //   if (err) {
-        //     // throw err;
-        //     // return;
-        //   }
-        // });
+
         fs.renameSync(currentPath, newPath, (err) => {
-          if (err) {
-            // throw err;
-            // return;
-          } else {
-          }
+          // Error handling is empty in original code
         });
+
         const minPath = path.resolve(".db/minut", "m.lis");
         const startPath = path.resolve(".db/minut");
-        // if (!fs.existsSync(minPath)) {
+
         fs.writeFile(`${minPath}`, "", (err) => {});
-        // }
 
         const files = fs.readdirSync(startPath);
         for (let i = 0; i < files.length; i++) {
@@ -85,10 +69,11 @@ const getData = async (event, isDev, arg) => {
                 `${_id + count.toString()}.bmp`
               ),
         };
-        const db = await dbase();
-        db.chain = lodash.chain(db.data);
-        db.chain.get("users").find({ _id }).value().scanned = true;
-        await db.write();
+
+        // Connect to the database and update the user
+        const db = await getDb();
+        await db.updateUser(_id, { scanned: true });
+
         return event.sender.send("scanResult", res);
       } else if (response === undefined) {
         console.log("connect scanner");

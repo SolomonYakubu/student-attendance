@@ -1,60 +1,64 @@
 "use strict";
-const dbase = require("../utils/connectLecturerDB");
-const lodash = require("lodash");
+const dbConnect = require("../utils/connectLecturerDB");
 const bcrypt = require("bcrypt");
-
 const fs = require("fs");
+const path = require("path");
+
 const signUp = async (event, arg) => {
   try {
-    const file = "./.db";
-    if (!fs.existsSync(file)) {
-      fs.mkdirSync(file);
-    }
-    const db = await dbase();
+    // Create database connection
+    const db = await dbConnect();
     console.log(arg);
     const { name, password, staffID, courses, department } = arg;
-    if (!name || !password || !staffID || courses.length < 1) {
+
+    if (!name || !password || !staffID || courses.length < 1 || !department) {
       return event.sender.send("signup-res", {
         error: true,
-
         status: "Fill out all fields",
       });
     }
-    db.chain = lodash.chain(db.data);
-    if (db.chain.get("lecturers").find({ staffID }).value()) {
+
+    // Check if lecturer already exists with the staffID
+    const existingLecturer = await db.findByStaffID(staffID);
+    if (existingLecturer) {
       return event.sender.send("signup-res", {
         error: true,
-
         status: "Lecturer already Registered",
       });
     }
 
-    // Create and query items using plain JS
+    // Create lecturer with hashed password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    db.data.lecturers.push({
+    // Store the lecturer in the database
+    const lecturerId = await db.createLecturer({
       name,
       staffID,
       password: hashedPassword,
-      courses,
       department,
+      courses, // The createLecturer method handles JSON conversion
     });
-    await db.write();
-    // const user = db.chain.get("users").remove({ matric: "ddd" }).value();
-    // await db.write();
-    // console.log(user);
-    return (
-      db.chain.get("lecturers").find({ staffID }).value() &&
-      event.sender.send("signup-res", {
-        error: false,
 
+    if (lecturerId) {
+      return event.sender.send("signup-res", {
+        error: false,
         status: "success",
-      })
-    );
+      });
+    } else {
+      return event.sender.send("signup-res", {
+        error: true,
+        status: "Failed to create lecturer",
+      });
+    }
   } catch (error) {
-    console.log(error.message);
+    console.error(error);
+    return event.sender.send("signup-res", {
+      error: true,
+      status: "An error occurred",
+    });
   }
 };
+
 module.exports = {
   signUp,
 };

@@ -12,7 +12,8 @@ import Match from "./pages/Match";
 import Start from "./pages/Start";
 import Splash from "./pages/Splash";
 import SignUp from "./pages/SignUp";
-
+import ManageStudents from "./pages/ManageStudents";
+import CompleteRegistration from "./pages/CompleteRegistration";
 export default function App() {
   const [canRoute, setCanRoute] = useState(true);
   const [splash, setSplash] = useState(true);
@@ -54,6 +55,20 @@ export default function App() {
       iconActive: "./src/img/report.gif",
       icon: "./src/img/report.svg",
     },
+    {
+      name: "Manage Students",
+      iconActive: "./src/img/attendance.gif",
+      icon: "./src/img/attendance.svg",
+      url: "/manage-students",
+      active: false,
+    },
+    {
+      name: "Complete Registration",
+      url: "/complete-registration",
+      iconActive: "./src/img/attendance.gif",
+      icon: "./src/img/attendance.svg",
+      active: false,
+    },
   ]);
   return (
     <>
@@ -91,6 +106,14 @@ export default function App() {
                 <Route
                   path="/report"
                   element={<Report setCanRoute={setCanRoute} />}
+                />
+                <Route
+                  path="/manage-students"
+                  element={<ManageStudents setCanRoute={setCanRoute} />}
+                />
+                <Route
+                  path="/complete-registration"
+                  element={<CompleteRegistration setCanRoute={setCanRoute} />}
                 />
               </Routes>
             </div>

@@ -12,7 +12,13 @@ const { getData } = require("./services/scanner");
 const { registerUser } = require("./services/user");
 const { matchUser } = require("./services/match");
 const { upload } = require("./services/upload");
-const { stats } = require("./services/stats");
+const {
+  stats,
+  courseReport,
+  lecturerReports,
+  generateReport,
+  generateMultiReport,
+} = require("./services/stats");
 const { report } = require("./services/report");
 const { login } = require("./services/login");
 const { addCourse } = require("./services/addCourse");
@@ -21,7 +27,14 @@ const { signUp } = require("./services/signUp");
 const { lecturerLogin } = require("./services/lecturerLogin");
 const { syncData } = require("./services/sync");
 const { downloadData } = require("./services/download");
+const { exportAttendanceToExcel } = require("./services/excelExport");
+const XLSX = require("xlsx");
+const fs = require("fs");
+const { dialog } = require("electron");
 const isDev = !app.isPackaged;
+
+// Fix: Make sure we're importing correctly
+const excelExport = require("./services/excelExport");
 
 function createWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
@@ -92,4 +105,36 @@ ipcMain.handle("sync-data", async (event, arg) => {
 ipcMain.handle("download-data", async (event, arg) => {
   await downloadData(event, arg);
 });
+
+// Add these new IPC handlers after your existing handlers
+
+// Handler for generating course reports - fix by using async/await pattern
+ipcMain.on("course-report", async (event, course) => {
+  try {
+    // Generate the report and send back directly
+    const reportResult = await generateReport(course);
+    event.sender.send("course-report-res", reportResult);
+  } catch (error) {
+    console.error("Error in course-report handler:", error);
+    event.sender.send("course-report-res", {
+      success: false,
+      error: error.message || "Failed to generate report",
+    });
+  }
+});
+
+// Handler for exporting report to Excel
+ipcMain.on("export-report-excel", async (event, courseCode, reportData) => {
+  try {
+    // Fix: Use the proper import reference
+    await excelExport.exportAttendanceToExcel({ event, courseCode, reportData });
+  } catch (error) {
+    console.error("Error in export-report-excel handler:", error);
+    event.sender.send("export-excel-complete", {
+      success: false,
+      error: error.message || "Failed to export report",
+    });
+  }
+});
+
 app.whenReady().then(createWindow);

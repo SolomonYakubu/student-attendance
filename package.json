@@ -19,7 +19,8 @@
       {
         "from": "./.exec",
         "to": "./.exec"
-      }, {
+      },
+      {
         "from": "./department.json",
         "to": "./department.json"
       },
@@ -31,7 +32,7 @@
         "from": "./token.json",
         "to": "./token.json"
       },
-       {
+      {
         "from": "./loader.html",
         "to": "./loader.html"
       },
@@ -52,6 +53,7 @@
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.1.0",
+    "better-sqlite3": "^11.8.1",
     "core-js": "^3.25.0",
     "dayjs": "^1.11.6",
     "dotenv": "^16.3.1",
@@ -76,8 +78,10 @@
     "react-to-print": "^2.14.12",
     "react-webcam": "^7.0.1",
     "recharts": "^2.1.16",
+    "sqlite3": "^5.1.7",
     "url-loader": "^4.1.1",
-    "uuid": "^8.3.2"
+    "uuid": "^8.3.2",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@babel/core": "^7.18.13",
